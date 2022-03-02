@@ -2,9 +2,11 @@
 // boilerplate code
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <list>
 #include <vector>
 #include <unordered_set>
+#include <math.h>
 using namespace std;
 
 struct LineSegment;
@@ -95,20 +97,35 @@ double squareSize;
 Square **squares;
 int maxSquareX;
 int maxSquareY;
-
+string debugSquaresFile = "DebugSquares.txt";
+bool debug = true;
 
 void PrintSquares()
 {
-    cout<<endl<<"Printing Squares: ["<<maxSquareX<<", "<<maxSquareY<<"]"<<endl;
-    for(int i=0; i<maxSquareX; i++)
+    ofstream debugFile;
+    if(debug)
     {
-        cout<<"   x: "<<i<<endl;
-        for(int j=0; j<maxSquareY; j++)
+        debugFile.open(debugSquaresFile);
+        debugFile<<maxSquareX<<" "<<maxSquareY<<endl;
+    }
+    std::cout<<endl<<"Printing Squares: ["<<maxSquareX<<", "<<maxSquareY<<"]"<<endl;
+    for(int j=0; j<maxSquareY; j++)
+    {
+        std::cout<<"      - y: "<<j<<endl;
+        for(int i=0; i<maxSquareX; i++)
         {
-            cout<<"      - y: "<<j<<endl;
+            std::cout<<"   x: "<<i<<endl;
+            if(debug)
+            {
+                debugFile<<squares[i][j].intersectingSegments.size()<<endl;
+            }
             for(auto k = squares[i][j].intersectingSegments.begin(); k!= squares[i][j].intersectingSegments.end(); k++)
             {
-                cout<<"            - seg: ("<<k->points[0]->x<<", "<<k->points[0]->y<<") - ("<<k->points[1]->x<<", "<<k->points[1]->y<<")"<<endl;
+                std::cout<<"            - seg: ("<<k->points[0]->x<<", "<<k->points[0]->y<<") - ("<<k->points[1]->x<<", "<<k->points[1]->y<<")"<<endl;
+                if(debug)
+                {
+                    debugFile<<k->points[0]->x<<" "<<k->points[0]->y<<" "<<k->points[1]->x<<" "<<k->points[1]->y<<endl;
+                }
             }
         }
     }
@@ -127,7 +144,7 @@ int FileNumLines(string fileName)
     }
     else
     {
-        cout<<"File Not Open"<<endl;
+        std::cout<<"File Not Open"<<endl;
         exit(EXIT_FAILURE);
     }
 
@@ -142,7 +159,7 @@ void ReadPoints(char *pointsFile)
     if(readFile)
     {
         numPoints = FileNumLines(pointsFile);
-        cout<<"Lines in points file: "<<numPoints<<endl;
+        std::cout<<"Lines in points file: "<<numPoints<<endl;
         points = new Point[numPoints];
         double input;
 
@@ -161,13 +178,13 @@ void ReadPoints(char *pointsFile)
             readFile >> input;
             points[i].h = input;
 
-            cout<<"("<<points[i].x<<", "<<points[i].y<<", "<<points[i].h<<")"<<endl;
+            std::cout<<"("<<points[i].x<<", "<<points[i].y<<", "<<points[i].h<<")"<<endl;
         }
-        cout<<endl;
+        std::cout<<endl;
     }
     else
     {
-        cout<<"Could Not Find Points File: "<<pointsFile<<endl;
+        std::cout<<"Could Not Find Points File: "<<pointsFile<<endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -190,11 +207,11 @@ void ReadTriangles(char *triangleFile)
             LineSegment s2 = LineSegment(&points[ind1], &points[ind3]);
             LineSegment s3 = LineSegment(&points[ind2], &points[ind3]);
 
+
             //Determine line segment x and y length, for use in finding squareSize - square size will be largest segment length size
             double xLen1 = abs(points[ind1].x - points[ind2].x);            
             double xLen2 = abs(points[ind1].x - points[ind3].x); 
             double xLen3 = abs(points[ind2].x - points[ind3].x); 
-
             double xLen = max(max(xLen1, xLen2), xLen3);
 
             double yLen1 = abs(points[ind1].y - points[ind2].y);
@@ -203,6 +220,7 @@ void ReadTriangles(char *triangleFile)
             double yLen = max(max(yLen1, yLen2), yLen3);
 
             squareSize = max(max(xLen, yLen), squareSize);
+
 
             unordered_set<LineSegment, LineSegment::HashFunction>::const_iterator got = segments.find(s1);
             //Line Segment not created yet
@@ -256,7 +274,7 @@ void ReadCircles(char *circleFile)
     }
     else
     {
-        cout<<"Could Not Find Circle File: "<<circleFile<<endl;
+        std::cout<<"Could Not Find Circle File: "<<circleFile<<endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -268,65 +286,118 @@ void AddSegmentToSquares(const LineSegment &ls)
     double y = ls.points[0]->y / squareSize;
     double targetX = ls.points[1]->x / squareSize;
     double targetY = ls.points[1]->y / squareSize;
-
-    //Set highest point as x/y, lower point as targetX/targetY
-    if(y < targetY)
-    {
-        double temp = y;
-        y = targetY;
-        targetY = temp;
-
-        temp = x;
-        x = targetX;
-        targetX = temp;
-    }
-    cout<<"     : <"<<x<<", "<<y<<"> - <"<<targetX<<", "<<targetY<<">"<<endl;
+    //std::cout<<"Adding Segment: ("<<x<<","<<y<<") - ("<<targetX<<","<<targetY<<")"<<endl;
 
     //Delta x,y
     double dX = targetX - x;
     double dY = targetY - y;
     //Is x increasing or decreasing
-    int xinc = dX > 0? 1 : -1;
-    //y is always decreasing
+    bool dxPositive = dX>0? true : false;
+    bool dyPositive = dY>0? true : false;
+    //std::cout<<"\tdX: "<<dX<<",  dY: "<<dY<<endl;
 
-    //If ls is a horizontal line, can't calculate slope so special case
     if(dY == 0)
     {
-        while((int)x != (int)targetX)
+        for(int i = x; dxPositive? i<targetX : i>targetX; dxPositive? i++ : i--)
         {
-            //Add square[(int)x][(int)y];
-            squares[(int)x][(int)y].intersectingSegments.insert(ls);
-            cout<<"\t\tADDED TO SQUARE: ["<<(int)x<<", "<<(int)y<<"]"<<endl;
-            x += xinc;
+            squares[i][(int)y].intersectingSegments.insert(ls);
+            //std::cout<<"\t\tADDED TO SQUARE: ["<<i<<", "<<(int)y<<"] - <"<<(int)i*squareSize<<", "<<(int)y*squareSize<<">"<<endl;
         }
+        //squares[(int)targetX][(int)targetY].intersectingSegments.insert(ls);
+    }
+    else if(dX == 0)
+    {
+        for(int j = y; dyPositive? j<targetY : j>targetY; dyPositive? j++ : j--)
+        {
+            squares[(int)x][j].intersectingSegments.insert(ls);
+            //std::cout<<"\t\tADDED TO SQUARE: ["<<(int)x<<", "<<j<<"] - <"<<(int)x*squareSize<<", "<<(int)j*squareSize<<">"<<endl;
+        }
+        //squares[(int)targetX][(int)targetY].intersectingSegments.insert(ls);
     }
     else
     {
-        //Change in Y per x, negative/positive adjusted for x increase/decrease
-        double yPerX = dY/dX * xinc;
-        //Number of X squares per one Y square;
-        double xPerY = dX/dY;
-        //Percent square that y is at (y is descending so counting from bottom) (it is already out of 1)
-        double initialYPercent = (y - (int)y);
-        cout<<"yPx: "<<yPerX<<",  xPy: "<<xPerY<<",  initYP: "<<initialYPercent<<endl;
+        double slope = dY/dX;
+        double b = y - slope*x;
+        //cout<<"SLOPE = "<<slope<<endl;
 
-        double nextXInt = x - xPerY*initialYPercent;
-        while((int)x != (int)targetX || (int)y != (int)targetY)
+        //cout<<"\tslope: "<<slope<<",  b: "<<b<<endl;
+        if(slope*slope < 1)
         {
-            cout<<"pos: ("<<x<<", "<<y<<")  ->  ("<<targetX<<", "<<targetY<<")"<<endl;
-            cout<<"   -- "<<nextXInt<<endl;
-            squares[(int)x][(int)y].intersectingSegments.insert(ls);
-            if((int)x == (int)nextXInt)
+            int i = x;
+            double j = slope*i+b;
+            //cout<<"\t\ti: "<<i<<",  j: "<<j<<endl;
+            
+            int incrementX = 1;
+            if(!dxPositive)
             {
-                nextXInt += xPerY;
-                y--;
+                incrementX = -1;
+                slope *=-1;
             }
-            else
-                x++;
+            //cout<<"  -  incX: "<<incrementX<<", newSlope: "<<slope<<endl;
+
+            while(i != targetX || (int)j != targetY)
+            {
+                //                            cout<<"   --- i: "<<i<<",  j: "<<j<<endl;
+                squares[i][(int)j].intersectingSegments.insert(ls);
+                //                            std::cout<<"\t\tADDED TO SQUARE: ["<<(int)i<<", "<<(int)j<<"] - <"<<(int)i*squareSize<<", "<<(int)j*squareSize<<">"<<endl;
+                if(slope > 0)
+                    i += incrementX;
+                else 
+                    j += slope;
+                //                            cout<<"\ti: "<<i<<",  j: "<<j<<",    target: ("<<targetX<<", "<<targetY<<")"<<endl;
+                if(i == targetX && (int)j == targetY)
+                    break;
+                
+                squares[i][(int)j].intersectingSegments.insert(ls);
+                //                            std::cout<<"\t\tADDED TO SQUARE: ["<<(int)i<<", "<<(int)j<<"] - <"<<(int)i*squareSize<<", "<<(int)j*squareSize<<">"<<endl;
+                if(slope <= 0)
+                    i += incrementX;
+                else 
+                    j += slope;
+                //                            cout<<"\ti: "<<i<<",  j: "<<j<<",    target: ("<<targetX<<", "<<targetY<<")"<<endl;
+            }
+        }
+        else
+        {
+            int j = y;
+            double i = (j-b)/slope;
+            //cout<<"\t\ti: "<<i<<",  j: "<<j;
+
+            slope = 1/slope;
+            int incrementY= 1;
+            if(!dyPositive)
+            {
+                incrementY = -1;
+                slope *=-1;
+            }
+            //cout<<"   -   incY: "<<incrementY<<", newSlope: "<<slope<<endl;
+
+            while(i != targetX || (int)j != targetY)
+            {
+                                                    //cout<<"   --- i: "<<i<<",  j: "<<j;
+                squares[(int)i][j].intersectingSegments.insert(ls);
+                //                                    std::cout<<"\t\tADDED TO SQUARE: ["<<(int)i<<", "<<(int)j<<"] - <"<<(int)i*squareSize<<", "<<(int)j*squareSize<<">"<<endl;
+                if(slope > 0)
+                    j += incrementY;
+                else 
+                    i += slope;
+                                                    //cout<<"\ti: "<<i<<",  j: "<<j<<",    target: ("<<targetX<<", "<<targetY<<")"<<endl;
+                if(i == targetX && (int)j == targetY)
+                    break;
+                squares[(int)i][j].intersectingSegments.insert(ls);
+                //                                    std::cout<<"\t\tADDED TO SQUARE: ["<<(int)i<<", "<<(int)j<<"] - <"<<(int)i*squareSize<<", "<<(int)j*squareSize<<">"<<endl;
+                
+                squares[(int)i][j].intersectingSegments.insert(ls);
+                if(slope <= 0)
+                    j += incrementY;
+                else 
+                    i += slope;
+                                                    //cout<<"\ti: "<<i<<",  j: "<<j<<",    target: ("<<targetX<<", "<<targetY<<")"<<endl;
+            }
         }
     }
     squares[(int)targetX][(int)targetY].intersectingSegments.insert(ls);
-    cout<<"\t\tADDED TO SQUARE: ["<<(int)targetX<<", "<<(int)targetY<<"]"<<endl;
+    //std::cout<<"\t\tTarget ADDED TO SQUARE: ["<<(int)targetX<<", "<<(int)targetY<<"] - <"<<(int)targetX*squareSize<<", "<<(int)targetY*squareSize<<">"<<endl;
 }
 
 void DivideSquares()
@@ -335,17 +406,17 @@ void DivideSquares()
     //squareSize = sqrt(min((double)(largestX)/2.0,(double)(largestY)/2.0));
     maxSquareX = (int)(largestX/squareSize)+1;
     maxSquareY = (int)(largestY/squareSize)+1;
-    cout<<endl<<"Squarify: size = "<<squareSize<<",  ["<<maxSquareX<<" x "<<maxSquareY<<"] - ["<<maxSquareX*squareSize<<" x "<<maxSquareY*squareSize<<"] ----"<<endl;
+    std::cout<<endl<<"Squarify: size = "<<squareSize<<",  ["<<maxSquareX<<" x "<<maxSquareY<<"] - ["<<maxSquareX*squareSize<<" x "<<maxSquareY*squareSize<<"] ----"<<endl;
 
     squares = new Square*[maxSquareX];
     for(int i=0; i<maxSquareX; i++)
         squares[i] = new Square[maxSquareY];
 
-    cout<<"Segments"<<endl;
+    std::cout<<"Segments"<<endl;
 
     for(auto i = segments.begin(); i != segments.end(); i++)
     {
-        cout<<"("<<i->points[0]->x<<", "<<i->points[0]->y<<") - ("<<i->points[1]->x<<", "<<i->points[1]->y<<")"<<endl;
+        std::cout<<"("<<i->points[0]->x<<", "<<i->points[0]->y<<") - ("<<i->points[1]->x<<", "<<i->points[1]->y<<")"<<endl;
         AddSegmentToSquares(*i);
     }
 }
@@ -359,7 +430,7 @@ int main(int argc, char *argv[])
 {
     if(argc != 4)
     {
-        cout<<"Usage: <Points.txt> <Trianges.txt> <Circles.txt>"<<endl;
+        std::cout<<"Usage: <Points.txt> <Trianges.txt> <Circles.txt>"<<endl;
         return 0;
     }
 
@@ -376,7 +447,7 @@ int main(int argc, char *argv[])
 
     maxSquareX = (int)(largestX/squareSize)+1;
     maxSquareY = (int)(largestY/squareSize)+1;
-    cout<<endl<<"Squarify: size = "<<squareSize<<",  ["<<maxSquareX<<" x "<<maxSquareY<<"] - ["<<maxSquareX*squareSize<<" x "<<maxSquareY*squareSize<<"] ----"<<endl;
+    std::cout<<endl<<"Squarify: size = "<<squareSize<<",  ["<<maxSquareX<<" x "<<maxSquareY<<"] - ["<<maxSquareX*squareSize<<" x "<<maxSquareY*squareSize<<"] ----"<<endl;
 
     squares = new Square*[maxSquareX];
     for(int i=0; i<maxSquareX; i++)
