@@ -7,9 +7,11 @@
 #include <vector>
 #include <unordered_set>
 #include <math.h>
+#include <ctime>
 using namespace std;
 
 struct LineSegment;
+clock_t time_req;
 
 struct Point
 {
@@ -100,6 +102,7 @@ int maxSquareY;
 string debugSquaresFile = "DebugSquares.txt";
 bool debug = true;
 
+
 void PrintSquares()
 {
     ofstream debugFile;
@@ -159,7 +162,7 @@ void ReadPoints(char *pointsFile)
     if(readFile)
     {
         numPoints = FileNumLines(pointsFile);
-        std::cout<<"Lines in points file: "<<numPoints<<endl;
+        //std::cout<<"Lines in points file: "<<numPoints<<endl;
         points = new Point[numPoints];
         double input;
 
@@ -178,7 +181,7 @@ void ReadPoints(char *pointsFile)
             readFile >> input;
             points[i].h = input;
 
-            std::cout<<"("<<points[i].x<<", "<<points[i].y<<", "<<points[i].h<<")"<<endl;
+            //std::cout<<"("<<points[i].x<<", "<<points[i].y<<", "<<points[i].h<<")"<<endl;
         }
         std::cout<<endl;
     }
@@ -199,6 +202,7 @@ void ReadTriangles(char *triangleFile)
         numSegments = 0;
         squareSize = 0;
 
+        time_req = clock();
         for(int i = 0; i < fileLength; i++)
         {
             int ind1, ind2, ind3;
@@ -259,10 +263,12 @@ void ReadTriangles(char *triangleFile)
             triangles[i].segments[0] = &s1;
             triangles[i].segments[1] = &s2;
             triangles[i].segments[2] = &s3;
-            s1.triangles.push_back(&triangles[i]); 
+            s1.triangles.push_back(&triangles[i]);
             s2.triangles.push_back(&triangles[i]); 
             s3.triangles.push_back(&triangles[i]);
         }
+	    time_req = clock() - time_req;
+        cout<<"Reading Triangles took "<<(float)time_req/CLOCKS_PER_SEC<<" seconds"<<endl;
     }
 }
 void ReadCircles(char *circleFile)
@@ -412,11 +418,11 @@ void DivideSquares()
     for(int i=0; i<maxSquareX; i++)
         squares[i] = new Square[maxSquareY];
 
-    std::cout<<"Segments"<<endl;
+    //std::cout<<"Segments"<<endl;
 
     for(auto i = segments.begin(); i != segments.end(); i++)
     {
-        std::cout<<"("<<i->points[0]->x<<", "<<i->points[0]->y<<") - ("<<i->points[1]->x<<", "<<i->points[1]->y<<")"<<endl;
+        //std::cout<<"("<<i->points[0]->x<<", "<<i->points[0]->y<<") - ("<<i->points[1]->x<<", "<<i->points[1]->y<<")"<<endl;
         AddSegmentToSquares(*i);
     }
 }
@@ -434,41 +440,17 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    cout<<"Reading In Points\n";
     ReadPoints(argv[1]);
+
+    cout<<"Reading in Triangles\n";
     ReadTriangles(argv[2]);
     //ReadCircles(argv[3]);
+    cout<<"Starting Squarify"<<endl;
 
     DivideSquares();
-    PrintSquares();
-
-     
-    /*
-    
-
-    maxSquareX = (int)(largestX/squareSize)+1;
-    maxSquareY = (int)(largestY/squareSize)+1;
-    std::cout<<endl<<"Squarify: size = "<<squareSize<<",  ["<<maxSquareX<<" x "<<maxSquareY<<"] - ["<<maxSquareX*squareSize<<" x "<<maxSquareY*squareSize<<"] ----"<<endl;
-
-    squares = new Square*[maxSquareX];
-    for(int i=0; i<maxSquareX; i++)
-        squares[i] = new Square[maxSquareY];
-
-    LineSegment s1 = LineSegment(&points[0], &points[1]);
-    AddSegmentToSquares(s1);*/
-
-
+    //PrintSquares();
     return 0;
 }
 
-
-/*
-points
-0 0 1
-0 1 2
-1 0 1.5
-1 1 2
-1.5 1.5 3
-2 1 2
-1 2 2
-*/
 
