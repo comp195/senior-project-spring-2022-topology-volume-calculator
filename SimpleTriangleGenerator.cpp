@@ -36,6 +36,10 @@ int main(int argc, char *argv[])
     cout<<"x/step = "<<(x/stepX)<<",  y/step = "<<(y/stepY)<<endl;
 
     int numPointsX = x/stepX;
+    if(numPointsX*stepX < x)
+        numPointsX += 1;
+    cout<<"x: "<<x<<",  stepX: "<<stepX<<",  numX: "<<numPointsX<<"  -  ";
+    cout<<"y: "<<y<<",  stepy: "<<stepY<<",  numY: "<<(y/stepY)<<" ";
     for(int j=0; j< (y/stepY)-1; j++)
     {
         for(int i=0; i< numPointsX-1; i++)

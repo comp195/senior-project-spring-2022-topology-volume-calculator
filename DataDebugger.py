@@ -60,9 +60,9 @@ def main():
             p1 = pointsList[lineAsInt[0]]
             p2 = pointsList[lineAsInt[1]]
             p3 = pointsList[lineAsInt[2]]
-            print(p1)
-            print(p2)
-            print(p3)
+            #print(p1)
+            #print(p2)
+            #print(p3)
 
             canvas.create_line(p1.x,p1.y,p2.x,p2.y, p3.x, p3.y, p1.x, p1.y)
             line = f.readline().split()
