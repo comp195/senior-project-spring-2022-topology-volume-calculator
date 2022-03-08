@@ -81,10 +81,13 @@ struct Square
     unordered_set<LineSegment, LineSegment::HashFunction> intersectingSegments;
 };
 
+//x, y, h = radius
 struct Circle
 {
-    double radius;
-    Point center;
+    double x;
+    double y;
+    double r;
+    double lineIntegral;
 };
 
 Point *points;
@@ -92,6 +95,7 @@ int numPoints;
 unordered_set<LineSegment, LineSegment::HashFunction> segments;
 int numSegments;
 Triangle *triangles;
+Circle *circles;
 
 double largestX;
 double largestY;
@@ -276,11 +280,26 @@ void ReadCircles(char *circleFile)
     ifstream readFile(circleFile);
     if(readFile)
     {
+        int fileLength = FileNumLines(circleFile);
+        circles = new Circle[fileLength];
+        double input;
 
+        for(int i = 0; i < fileLength; i++)
+        {
+            readFile >> input;
+            circles[i].x = input;
+
+            readFile >> input;
+            circles[i].y = input;
+
+            readFile >> input;
+            circles[i].r = input;
+        }
+        std::cout<<endl;
     }
     else
     {
-        std::cout<<"Could Not Find Circle File: "<<circleFile<<endl;
+        std::cout<<"Could Not Find Circles File: "<<circleFile<<endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -405,7 +424,6 @@ void AddSegmentToSquares(const LineSegment &ls)
     squares[(int)targetX][(int)targetY].intersectingSegments.insert(ls);
     //std::cout<<"\t\tTarget ADDED TO SQUARE: ["<<(int)targetX<<", "<<(int)targetY<<"] - <"<<(int)targetX*squareSize<<", "<<(int)targetY*squareSize<<">"<<endl;
 }
-
 void DivideSquares()
 {
     //Determine Square Size and number of squares
@@ -429,6 +447,19 @@ void DivideSquares()
 
 void CircleLineIntersection(LineSegment &ls, Circle &c)
 {
+    double AB[2];
+    double AC[2];
+
+    AB[0] = ls.points[1]->x-ls.points[0]->x;
+    AB[1] = ls.points[1]->y-ls.points[0]->y;
+
+    AC[0] = ls.points[1]->x-c.x;
+    AC[1] = ls.points[1]->y-c.y;
+
+    double g = AC[0]*AB[1]-AC[1]*AB[0];
+    double m = sqrt(AB[0]*AB[0]-AB[1]*AB[1]);
+
+    double cosTheta = 
 }
 
 // Driver Code
