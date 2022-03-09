@@ -5,14 +5,16 @@
 #include <string>
 #include <list>
 #include <vector>
+#include <set>
 #include <unordered_set>
+#include <algorithm>
 #include <math.h>
 #include <ctime>
 using namespace std;
 
 struct LineSegment;
 clock_t time_req;
-
+double pi = 3.141592653589793238462643383279502884197169399375105820974944;
 struct Point
 {
     double x;
@@ -39,13 +41,17 @@ struct Point
 struct Triangle
 {
     LineSegment* segments[3];
+    //z = -mx - ny + h
+    double m;
+    double n;
+    double h;
 };
 
 struct LineSegment
 {
     Point* points[2];
     size_t hashNum;
-    vector<Triangle*> triangles;
+    set<int> triangles;
 
     LineSegment(Point *a, Point *b)
     {
@@ -76,6 +82,27 @@ struct LineSegment
     };
 };
 
+struct Intersection
+{
+    double theta;
+    LineSegment* ls;
+    Intersection(double t, LineSegment *segment)
+    {
+        theta = t;
+        ls = segment;
+    }
+
+    bool operator==(const Intersection& other) const
+    {
+        return other.theta == this->theta;
+    }
+};
+struct compareIntersection {
+    bool operator() (Intersection a, Intersection b) const {
+        return a.theta<b.theta;
+    }
+};
+
 struct Square
 {
     unordered_set<LineSegment, LineSegment::HashFunction> intersectingSegments;
@@ -86,16 +113,29 @@ struct Circle
 {
     double x;
     double y;
-    double r;
     double lineIntegral;
 };
+
+void PrintPoint(Point a)
+{
+    cout<<"("<<a.x<<", "<<a.y<<")";
+}
+void PrintSegment(LineSegment s)
+{
+    PrintPoint(*s.points[0]);
+    cout<<" - ";
+    PrintPoint(*s.points[1]);
+}
 
 Point *points;
 int numPoints;
 unordered_set<LineSegment, LineSegment::HashFunction> segments;
 int numSegments;
 Triangle *triangles;
+int numTriangles;
 Circle *circles;
+int numCircles;
+vector<double> radii;
 
 double largestX;
 double largestY;
@@ -135,6 +175,20 @@ void PrintSquares()
                 }
             }
         }
+    }
+}
+void PrintTriangles()
+{
+    cout<<"\nPrinting "<<numTriangles<<" Trianges:"<<endl;
+    for(int i=0; i<numTriangles; i++)
+    {
+        cout<<"\tTriangle "<<&triangles[i]<<"   "<<triangles[i].segments[0]<<endl<<"\t\t";
+        PrintSegment(*triangles[i].segments[0]);
+        cout<<"  :  ";
+        PrintSegment(*triangles[i].segments[1]);
+        cout<<"  :  ";
+        PrintSegment(*triangles[i].segments[2]);
+        cout<<endl;
     }
 }
 
@@ -197,23 +251,59 @@ void ReadPoints(char *pointsFile)
 }
 void ReadTriangles(char *triangleFile)
 {
+    cout<<"READING TRIANGLES: "<<endl;
     ifstream readFile(triangleFile);
     if(readFile)
     {
-        int fileLength = FileNumLines(triangleFile);
-        triangles = new Triangle[fileLength];
+        numTriangles = FileNumLines(triangleFile);
+        triangles = new Triangle[numTriangles];
         double input;
         numSegments = 0;
         squareSize = 0;
 
         time_req = clock();
-        for(int i = 0; i < fileLength; i++)
+        for(int i = 0; i < numTriangles; i++)
         {
             int ind1, ind2, ind3;
             readFile >> ind1 >> ind2 >> ind3;
-            LineSegment s1 = LineSegment(&points[ind1], &points[ind2]);
-            LineSegment s2 = LineSegment(&points[ind1], &points[ind3]);
-            LineSegment s3 = LineSegment(&points[ind2], &points[ind3]);
+            Point* a = &points[ind1];
+            Point* b = &points[ind2];
+            Point* c = &points[ind3];
+            LineSegment* s1 = new LineSegment(a,b);
+            LineSegment* s2 = new LineSegment(a,c);
+            LineSegment* s3 = new LineSegment(b,c);
+
+            cout<<"\tTriangle "<<i<<endl<<"\t\t";
+            PrintSegment(*s1);
+            cout<<"  :  ";
+            PrintSegment(*s2);
+            cout<<"  :  ";
+            PrintSegment(*s3);
+            cout<<endl;
+
+            //Calculate equation for plane
+            double AB[3];
+            double AC[3];
+
+            AB[0] = b->x-a->x;
+            AB[1] = b->y-a->y;
+            AB[2] = b->h-a->h;
+
+            AC[0] = c->x-a->x;
+            AC[1] = c->y-a->y;
+            AC[2] = c->h-a->h;
+
+            double normalVector[3];
+            normalVector[0] = AB[1]*AC[2] - AB[1]*AC[2];
+            normalVector[1] = AB[0]*AC[2] - AB[0]*AC[2];
+            normalVector[2] = AB[0]*AC[1] - AB[0]*AC[1];
+
+            double m = normalVector[0]/normalVector[2];
+            double n = normalVector[1]/normalVector[2];
+            double h = a->x*m + a->y*n + a->h;
+            triangles[i].m = m;
+            triangles[i].n = n;
+            triangles[i].h = h;
 
 
             //Determine line segment x and y length, for use in finding squareSize - square size will be largest segment length size
@@ -230,17 +320,15 @@ void ReadTriangles(char *triangleFile)
             squareSize = max(max(xLen, yLen), squareSize);
 
 
-            unordered_set<LineSegment, LineSegment::HashFunction>::const_iterator got = segments.find(s1);
+            unordered_set<LineSegment, LineSegment::HashFunction>::iterator got = segments.find(*s1);
             //Line Segment not created yet
             if(got == segments.end())
             {
-                segments.insert(s1);
+                segments.insert(*s1);
                 numSegments++;
             }
-            else
-            {
-                s1 = *got;
-            }
+            got = segments.find(*s1);
+            s1 = &*got;
 
             got = segments.find(s2);
             if(got == segments.end())
@@ -248,10 +336,8 @@ void ReadTriangles(char *triangleFile)
                 segments.insert(s2);
                 numSegments++;
             }
-            else
-            {
-                s2 = *got;
-            }
+            got = segments.find(s2);
+            s2 = *got;
 
             got = segments.find(s3);
             if(got == segments.end())
@@ -259,17 +345,22 @@ void ReadTriangles(char *triangleFile)
                 segments.insert(s3);
                 numSegments++;
             }
-            else
-            {
-                s3 = *got;
-            }
+            got = segments.find(s3);
+            s3 = *got;
 
-            triangles[i].segments[0] = &s1;
-            triangles[i].segments[1] = &s2;
-            triangles[i].segments[2] = &s3;
-            s1.triangles.push_back(&triangles[i]);
-            s2.triangles.push_back(&triangles[i]); 
-            s3.triangles.push_back(&triangles[i]);
+            triangles[i].segments[0] = ;
+            triangles[i].segments[1] = s2;
+            triangles[i].segments[2] = s3;
+            s1.triangles.insert(i);
+            s2.triangles.insert(i); 
+            s3.triangles.insert(i);
+            cout<<"\t\t";
+            PrintSegment(s1);
+            cout<<"  :  ";
+            PrintSegment(s2);
+            cout<<"  :  ";
+            PrintSegment(s3);
+            cout<<endl;
         }
 	    time_req = clock() - time_req;
         cout<<"Reading Triangles took "<<(float)time_req/CLOCKS_PER_SEC<<" seconds"<<endl;
@@ -280,20 +371,28 @@ void ReadCircles(char *circleFile)
     ifstream readFile(circleFile);
     if(readFile)
     {
-        int fileLength = FileNumLines(circleFile);
-        circles = new Circle[fileLength];
+        numCircles = FileNumLines(circleFile);
+        circles = new Circle[numCircles];
+        double radiStart;
+        double radiEnd;
+        double radiStep;
+        readFile >> radiStart >> radiEnd >> radiStep;
+
+        for(double i = radiStart; i<=radiEnd; i += radiStep)
+        {
+            cout<<"Reading Circle Radii: "<<i<<endl;
+            radii.push_back(i);
+        }
+
         double input;
 
-        for(int i = 0; i < fileLength; i++)
+        for(int i = 0; i < numCircles; i++)
         {
             readFile >> input;
             circles[i].x = input;
 
             readFile >> input;
             circles[i].y = input;
-
-            readFile >> input;
-            circles[i].r = input;
         }
         std::cout<<endl;
     }
@@ -440,26 +539,138 @@ void DivideSquares()
 
     for(auto i = segments.begin(); i != segments.end(); i++)
     {
+        cout<<" - Divide Squares on segment: <"<<(*i).points[0]->x<<", "<<(*i).points[0]->y<<"> - <"<<(*i).points[1]->x<<", "<<(*i).points[1]->y<<">"<<endl;
         //std::cout<<"("<<i->points[0]->x<<", "<<i->points[0]->y<<") - ("<<i->points[1]->x<<", "<<i->points[1]->y<<")"<<endl;
         AddSegmentToSquares(*i);
     }
+    cout<<"Divide Squares Finishing"<<endl;
 }
 
-void CircleLineIntersection(LineSegment &ls, Circle &c)
+set<Intersection,compareIntersection> CircleLineIntersection(LineSegment &ls, int circleIndex, int radiiIndex)
 {
+    set<Intersection,compareIntersection> intersections;
     double AB[2];
     double AC[2];
+    double IC[2];
 
     AB[0] = ls.points[1]->x-ls.points[0]->x;
     AB[1] = ls.points[1]->y-ls.points[0]->y;
 
-    AC[0] = ls.points[1]->x-c.x;
-    AC[1] = ls.points[1]->y-c.y;
+    AC[0] = ls.points[0]->x-circles[circleIndex].x;
+    AC[1] = ls.points[0]->y-circles[circleIndex].y;
 
-    double g = AC[0]*AB[1]-AC[1]*AB[0];
-    double m = sqrt(AB[0]*AB[0]-AB[1]*AB[1]);
+    double a = AB[0]*AB[0] + AB[1]*AB[1];
+    double bHalf = (AC[0]*AB[0] + AC[1]*AB[1]);
+    double c = AC[0]*AC[0] + AC[1]*AC[1] - radii[radiiIndex]*radii[radiiIndex];
 
-    double cosTheta = 
+    double discriminant = bHalf*bHalf - a*c;
+    if(discriminant < 0)
+    {
+        return intersections;
+    }
+    else if(discriminant == 0)
+    {
+        double n = -bHalf/a;
+        IC[0] = AC[0] + n*AB[0];
+        IC[1] = AC[1] + n*AB[1];
+
+        double theta = atan(IC[0]/IC[1]);
+        if(IC[0]<0)
+            theta = pi-theta;
+
+        intersections.insert(Intersection(theta, &ls));
+        /* NEED NEW ALGORITHM: OPERATE ON A FULL TRIANGLE, FIND ALL INTERSECTIONS, CALCULATE LINE INTEGRALS, QUEUE TWO MORE TRIANGLES FROM THE UNUSED SIDES
+         *    Find Intersecting Segment using squares -> queue triangles -> calculate integrals -> queue triangle on other side of segment if has intersection
+                      -> stop when queue'd triangles don't queue any more
+         *  
+         * Optimizations:
+         *  - Save intersection values of lines already calculated = x2 speed
+        */
+        return intersections;
+    }
+    else
+    {
+        double n = (-bHalf + sqrt(discriminant))/a;
+        IC[0] = AC[0] + n*AB[0];
+        IC[1] = AC[1] + n*AB[1];
+        double theta = atan(IC[0]/IC[1]);
+        if(IC[0]<0)
+            theta = pi-theta;
+
+        intersections.insert(Intersection(theta, &ls));
+
+        n = (-bHalf - sqrt(discriminant))/a;
+        IC[0] = AC[0] + n*AB[0];
+        IC[1] = AC[1] + n*AB[1];
+        theta = atan(IC[0]/IC[1]);
+        if(IC[0]<0)
+            theta = pi-theta;
+
+        intersections.insert(Intersection(theta, &ls));
+        
+        return intersections;
+    }
+}
+
+void SingleCircleIntegral(int circleIndex, int radiiIndex)
+{
+    set<Intersection,compareIntersection> intersections;
+    set<int> triangleQueue;
+    set<int> nextTriangleQueue;
+    set<int> coveredTriangles;
+
+    //Find square somehow ----------------------------------------------------NEED TO DO THIS ASAP
+    Square s = squares[0][0];
+    auto start = s.intersectingSegments.begin();
+    auto end = s.intersectingSegments.end();
+
+    //Find First line segment that intersects circle,. then transition to marching algorithm
+    for(auto i = start; i != end; i++)
+    {
+        LineSegment ls = *i;
+        intersections = CircleLineIntersection(ls, circleIndex, radiiIndex);
+        if(!intersections.empty())
+        {
+            triangleQueue = ls.triangles;
+            break;
+        }
+    }
+
+    //While there are triangles left to march around the circle
+    while(!triangleQueue.empty())
+    {
+        for(int currTriangle:triangleQueue)
+        {
+            coveredTriangles.insert(currTriangle);
+            set<Intersection,compareIntersection> temp;
+            for(int segmentIndex = 0; segmentIndex < 3; segmentIndex++)
+            {
+                temp = CircleLineIntersection(*(triangles[currTriangle].segments[segmentIndex]), currTriangle, radiiIndex);
+                if(temp.empty())
+                {
+                    //Save the calculated intersection points
+                    intersections.insert(temp.begin(), temp.end());
+                    //Queue triangles on both sides of this line segment for next round (duplicate triangle removed through subtract covered triangles set)
+                    //This makes line segment intersections get calculated twice!! try memoization optimization later
+                    nextTriangleQueue.insert(triangles[currTriangle].segments[segmentIndex]->triangles.begin(), triangles[currTriangle].segments[segmentIndex]->triangles.end());
+                }
+            }
+        }
+
+        //Make sure we don't re-do triangles that we have already covered
+        triangleQueue.clear();
+        set_difference(nextTriangleQueue.begin(), nextTriangleQueue.end(), coveredTriangles.begin(), coveredTriangles.end(), inserter(triangleQueue,triangleQueue.end()));
+    }
+
+    //Intersections should be finished Calculating, print them here:
+    cout<<"Intersections for circle at <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> with r: "<<radii[radiiIndex]<<"\n";
+}
+
+void CalculateAllCircleIntegrals()
+{
+    for(int i=0; i<numCircles; i++)
+        for(int radiiIndex: radii)
+            SingleCircleIntegral(i, radiiIndex);
 }
 
 // Driver Code
@@ -476,11 +687,29 @@ int main(int argc, char *argv[])
 
     cout<<"Reading in Triangles\n";
     ReadTriangles(argv[2]);
-    //ReadCircles(argv[3]);
+    cout<<"NumSegments = "<<numSegments<<endl;
+
+    /*for(int i=0; i<numPoints; i++)
+    {
+        cout<<"\nPrinting Point: "<<&points[i]<<",    ";
+        PrintPoint(points[i]);
+    }
+    cout<<"\n"<<endl;
+    for(auto i = segments.begin(); i!=segments.end(); i++)
+    {
+        cout<<"\nPrinting Segment: "<<&*i<<",    ";
+        PrintSegment(*i);
+    }*/
+    PrintTriangles();
+    ReadCircles(argv[3]);
     cout<<"Starting Squarify"<<endl;
 
     DivideSquares();
     //PrintSquares();
+
+    cout<<"Starting Circle Calculations"<<endl;
+    CalculateAllCircleIntegrals();
+
     return 0;
 }
 
