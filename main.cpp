@@ -40,7 +40,7 @@ struct Point
 
 struct Triangle
 {
-    LineSegment* segments[3];
+    const LineSegment* segments[3];
     //z = -mx - ny + h
     double m;
     double n;
@@ -85,8 +85,8 @@ struct LineSegment
 struct Intersection
 {
     double theta;
-    LineSegment* ls;
-    Intersection(double t, LineSegment *segment)
+    const LineSegment* ls;
+    Intersection(double t, const LineSegment *segment)
     {
         theta = t;
         ls = segment;
@@ -269,16 +269,16 @@ void ReadTriangles(char *triangleFile)
             Point* a = &points[ind1];
             Point* b = &points[ind2];
             Point* c = &points[ind3];
-            LineSegment* s1 = new LineSegment(a,b);
-            LineSegment* s2 = new LineSegment(a,c);
-            LineSegment* s3 = new LineSegment(b,c);
+            LineSegment s1 = LineSegment(a,b);
+            LineSegment s2 = LineSegment(a,c);
+            LineSegment s3 = LineSegment(b,c);
 
             cout<<"\tTriangle "<<i<<endl<<"\t\t";
-            PrintSegment(*s1);
+            PrintSegment(s1);
             cout<<"  :  ";
-            PrintSegment(*s2);
+            PrintSegment(s2);
             cout<<"  :  ";
-            PrintSegment(*s3);
+            PrintSegment(s3);
             cout<<endl;
 
             //Calculate equation for plane
@@ -320,15 +320,15 @@ void ReadTriangles(char *triangleFile)
             squareSize = max(max(xLen, yLen), squareSize);
 
 
-            unordered_set<LineSegment, LineSegment::HashFunction>::iterator got = segments.find(*s1);
+            unordered_set<LineSegment, LineSegment::HashFunction>::iterator got = segments.find(s1);
             //Line Segment not created yet
             if(got == segments.end())
             {
-                segments.insert(*s1);
+                segments.insert(s1);
                 numSegments++;
             }
-            got = segments.find(*s1);
-            s1 = &*got;
+            got = segments.find(s1);
+            s1 = *got;
 
             got = segments.find(s2);
             if(got == segments.end())
@@ -348,9 +348,9 @@ void ReadTriangles(char *triangleFile)
             got = segments.find(s3);
             s3 = *got;
 
-            triangles[i].segments[0] = ;
-            triangles[i].segments[1] = s2;
-            triangles[i].segments[2] = s3;
+            triangles[i].segments[0] = &*segments.find(s1);
+            triangles[i].segments[1] = &*segments.find(s2);
+            triangles[i].segments[2] = &*segments.find(s3);
             s1.triangles.insert(i);
             s2.triangles.insert(i); 
             s3.triangles.insert(i);
@@ -546,7 +546,7 @@ void DivideSquares()
     cout<<"Divide Squares Finishing"<<endl;
 }
 
-set<Intersection,compareIntersection> CircleLineIntersection(LineSegment &ls, int circleIndex, int radiiIndex)
+set<Intersection,compareIntersection> CircleLineIntersection(const LineSegment &ls, int circleIndex, int radiiIndex)
 {
     set<Intersection,compareIntersection> intersections;
     double AB[2];
@@ -689,7 +689,7 @@ int main(int argc, char *argv[])
     ReadTriangles(argv[2]);
     cout<<"NumSegments = "<<numSegments<<endl;
 
-    /*for(int i=0; i<numPoints; i++)
+    for(int i=0; i<numPoints; i++)
     {
         cout<<"\nPrinting Point: "<<&points[i]<<",    ";
         PrintPoint(points[i]);
@@ -699,7 +699,7 @@ int main(int argc, char *argv[])
     {
         cout<<"\nPrinting Segment: "<<&*i<<",    ";
         PrintSegment(*i);
-    }*/
+    }
     PrintTriangles();
     ReadCircles(argv[3]);
     cout<<"Starting Squarify"<<endl;
