@@ -144,6 +144,7 @@ Square **squares;
 int maxSquareX;
 int maxSquareY;
 string debugSquaresFile = "DebugSquares.txt";
+string debugIntersectionsFile = "DebugIntersections.txt";
 bool debug = true;
 
 
@@ -371,7 +372,7 @@ void ReadCircles(char *circleFile)
     ifstream readFile(circleFile);
     if(readFile)
     {
-        numCircles = FileNumLines(circleFile);
+        numCircles = FileNumLines(circleFile) - 1;
         circles = new Circle[numCircles];
         double radiStart;
         double radiEnd;
@@ -574,7 +575,7 @@ set<Intersection,compareIntersection> CircleLineIntersection(const LineSegment &
         IC[0] = AC[0] + n*AB[0];
         IC[1] = AC[1] + n*AB[1];
 
-        double theta = atan(IC[0]/IC[1]);
+        double theta = asin(IC[1]/radii[radiiIndex]);
         if(IC[0]<0)
             theta = pi-theta;
 
@@ -593,7 +594,8 @@ set<Intersection,compareIntersection> CircleLineIntersection(const LineSegment &
         double n = (-bHalf + sqrt(discriminant))/a;
         IC[0] = AC[0] + n*AB[0];
         IC[1] = AC[1] + n*AB[1];
-        double theta = atan(IC[0]/IC[1]);
+        //double theta = atan(IC[0]/IC[1]);
+        double theta = asin(IC[1]/radii[radiiIndex]);
         if(IC[0]<0)
             theta = pi-theta;
 
@@ -602,7 +604,8 @@ set<Intersection,compareIntersection> CircleLineIntersection(const LineSegment &
         n = (-bHalf - sqrt(discriminant))/a;
         IC[0] = AC[0] + n*AB[0];
         IC[1] = AC[1] + n*AB[1];
-        theta = atan(IC[0]/IC[1]);
+        //theta = atan(IC[0]/IC[1]);
+        theta = asin(IC[1]/radii[radiiIndex]);
         if(IC[0]<0)
             theta = pi-theta;
 
@@ -612,8 +615,10 @@ set<Intersection,compareIntersection> CircleLineIntersection(const LineSegment &
     }
 }
 
+ofstream debugIntersectionsStream;
 void SingleCircleIntegral(int circleIndex, int radiiIndex)
 {
+    cout<<"Single Circle Integral"<<endl;
     set<Intersection,compareIntersection> intersections;
     set<int> triangleQueue;
     set<int> nextTriangleQueue;
@@ -621,8 +626,9 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
 
     //Find square somehow ----------------------------------------------------NEED TO DO THIS ASAP
     Square s = squares[0][0];
-    auto start = s.intersectingSegments.begin();
-    auto end = s.intersectingSegments.end();
+
+    auto start = segments.begin();
+    auto end = segments.end();
 
     //Find First line segment that intersects circle,. then transition to marching algorithm
     for(auto i = start; i != end; i++)
@@ -631,14 +637,19 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
         intersections = CircleLineIntersection(ls, circleIndex, radiiIndex);
         if(!intersections.empty())
         {
+            cout<<"WE FOUND A MATCH: ";
+            PrintSegment(ls);
+            cout<<"  -  numTrianglesInvolved: "<<ls.triangles.size()<<endl;
             triangleQueue = ls.triangles;
             break;
         }
     }
+    cout<<"Queue Length = "<<triangleQueue.size()<<endl;
 
     //While there are triangles left to march around the circle
     while(!triangleQueue.empty())
     {
+        cout<<"Triangle Round Robin"<<endl;
         for(int currTriangle:triangleQueue)
         {
             coveredTriangles.insert(currTriangle);
@@ -663,14 +674,28 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
     }
 
     //Intersections should be finished Calculating, print them here:
+    if(debug)
+    {
+        debugIntersectionsStream<<circles[circleIndex].x<<" "<<circles[circleIndex].y<<" "<<radii[radiiIndex]<<" ";
+    }
     cout<<"Intersections for circle at <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> with r: "<<radii[radiiIndex]<<"\n";
+    for(auto i=intersections.begin(); i!= intersections.end(); i++)
+    {
+        cout<<"\t- "<<(*i).theta<<endl;
+        debugIntersectionsStream<<i->theta<<" ";
+    }
+    debugIntersectionsStream<<endl;
 }
 
 void CalculateAllCircleIntegrals()
 {
+    if(debug)
+        debugIntersectionsStream.open(debugIntersectionsFile);
     for(int i=0; i<numCircles; i++)
-        for(int radiiIndex: radii)
+        for(int radiiIndex = 0; radiiIndex < radii.size(); radiiIndex++)
             SingleCircleIntegral(i, radiiIndex);
+    if(debug)
+        debugIntersectionsStream.close();
 }
 
 // Driver Code
