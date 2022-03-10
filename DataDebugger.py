@@ -2,6 +2,7 @@
 
 from tkinter import *
 import sys
+import math
 
 class Point:
     def __init__(self, x, y) -> None:
@@ -26,7 +27,7 @@ def main():
     canvas = Canvas(root, width = 900, height = 600)
     canvas.pack()
 
-    spacing = 40
+    spacing = 50
     offset = 10
 
 
@@ -62,9 +63,18 @@ def main():
         line = f.readline().split()
         while line:
             #print(line)
-            lineAsInt = list(map(float, line))
+            lineAsFloat = list(map(float, line))
             #print(lineAsInt)
-            pointsList.append( Point(lineAsInt[0]*spacing + offset, lineAsInt[1]*spacing+ offset ) )
+            centerX = lineAsFloat[0]*spacing+offset
+            centerY = lineAsFloat[1]*spacing+offset
+            radius = lineAsFloat[2]*spacing
+
+            canvas.create_oval(centerX - radius, centerY - radius, centerX+radius, centerY+radius)
+
+            for theta in lineAsFloat[3:]:
+                xOffset = radius*math.cos(theta)
+                yOffset = radius*math.sin(theta)
+                canvas.create_oval(centerX +xOffset - 2, centerY + yOffset-2, centerX+xOffset+2, centerY+yOffset+2, fill="RED", outline="RED")
             line = f.readline().split()
 
     root.mainloop()
