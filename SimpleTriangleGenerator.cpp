@@ -17,15 +17,21 @@ int main(int argc, char *argv[])
     int y = atoi(argv[4]);
     float stepX = atof(argv[5]);
     float stepY = atof(argv[6]);
+    int numPointsX = x/stepX;
+    if(numPointsX*stepX < x)
+        numPointsX += 1;
+    int numPointsY = y/stepY;
+    if(numPointsY*stepY < y)
+        numPointsY += 1;
 
     ofstream pointsFile;
     pointsFile.open(argv[1]);
 
-    for(float j=0; j< y; j+=stepY)
+    for(float j=0; j< numPointsY; j++)
     {
-        for(float i=0; i< x; i+=stepX)
+        for(float i=0; i< numPointsX; i++)
         {
-            pointsFile<<i<<" "<<j<<" "<<pointHeight<<endl;
+            pointsFile<<i*stepX<<" "<<j*stepY<<" "<<pointHeight<<endl;
         }
     }
     pointsFile.close();
@@ -35,12 +41,9 @@ int main(int argc, char *argv[])
     trianglesFile.open(argv[2]);
     cout<<"x/step = "<<(x/stepX)<<",  y/step = "<<(y/stepY)<<endl;
 
-    int numPointsX = x/stepX;
-    if(numPointsX*stepX < x)
-        numPointsX += 1;
     cout<<"x: "<<x<<",  stepX: "<<stepX<<",  numX: "<<numPointsX<<"  -  ";
     cout<<"y: "<<y<<",  stepy: "<<stepY<<",  numY: "<<(y/stepY)<<" ";
-    for(int j=0; j< (y/stepY)-1; j++)
+    for(int j=0; j< numPointsY-1; j++)
     {
         for(int i=0; i< numPointsX-1; i++)
         {

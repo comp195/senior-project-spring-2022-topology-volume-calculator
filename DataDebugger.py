@@ -24,10 +24,10 @@ def main():
     root = Tk()
     root.title("Data Visualization")
     root.geometry("1000x700")
-    canvas = Canvas(root, width = 900, height = 600)
+    canvas = Canvas(root, width = 2000, height = 1400)
     canvas.pack()
 
-    spacing = 50
+    spacing = 30
     offset = 10
 
 
