@@ -161,6 +161,7 @@ struct Intersection
         return other.theta == this->theta;
     }
 };
+
 //Debugging Methods
 void PrintPoint(long a)
 {
@@ -222,6 +223,7 @@ void PrintTriangles()
         cout<<endl;
     }
 }
+
 int FileNumLines(string fileName)
 {
     time_req = clock();
@@ -243,7 +245,6 @@ int FileNumLines(string fileName)
     cout<<"Checking File Size took "<<(float)time_req/CLOCKS_PER_SEC<<" seconds"<<endl;
     return count;
 }
-
 void ReadPoints(char *pointsFile)
 {
     largestX = 0;
@@ -326,9 +327,13 @@ void ReadTriangles(char *triangleFile)
             AC[2] = c.h-a.h;
 
             double normalVector[3];
-            normalVector[0] = AB[1]*AC[2] - AB[1]*AC[2];
-            normalVector[1] = AB[0]*AC[2] - AB[0]*AC[2];
-            normalVector[2] = AB[0]*AC[1] - AB[0]*AC[1];
+            normalVector[0] = AB[1]*AC[2] - AB[2]*AC[1];
+            normalVector[1] = AB[0]*AC[2] - AB[2]*AC[0];
+            normalVector[2] = AB[0]*AC[1] - AB[1]*AC[0];
+
+            //cout<<"<"<<AB[0]<<", "<<AB[1]<<", "<<AB[2]<<">     ";
+            //cout<<"<"<<AC[0]<<", "<<AC[1]<<", "<<AC[2]<<">     ";
+            //cout<<"<"<<normalVector[0]<<", "<<normalVector[1]<<", "<<normalVector[2]<<">"<<endl;
 
             double m = normalVector[0]/normalVector[2];
             double n = normalVector[1]/normalVector[2];
@@ -725,17 +730,50 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
             //cout<<"\t - Hit!"<<endl;
             intersections.insert(intersections.end(), temp.begin(), temp.end());
     }
+    sort(intersections.begin(), intersections.end());
     //Intersections should be finished Calculating, print them here:
     if(debug)
     {
         debugIntersectionsStream<<circles[circleIndex].x<<" "<<circles[circleIndex].y<<" "<<radii[radiiIndex]<<" ";
     }
     //cout<<"Intersections for circle at <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> with r: "<<radii[radiiIndex]<<"\n";
-    for(Intersection i:intersections)
+    double integral = 0;
+    int numIntersections = intersections.size();
+    for(int i=0; i<numIntersections; i++)
     {
+        int j = i+1;
         //cout<<"\t- "<<i.theta<<endl;
-        debugIntersectionsStream<<i.theta<<" ";
+        if(i == numIntersections - 1)
+            j = 0;
+
+        LineSegmentData ls1 = segments[intersections[i].ls];
+        LineSegmentData ls2 = segments[intersections[j].ls];
+        //cout<<"before set intersection"<<endl;
+
+        int commonTriangle = -1;
+        for(int a : ls1.triangles)
+        {
+            for(int b : ls2.triangles)
+            {
+                //cout<<"a: "<<a<<", b: "<<b<<endl;
+                if(a == b)
+                {
+                    commonTriangle = a;
+                    goto foundTriangle;
+                }
+            }
+        }
+        foundTriangle:
+        //cout<<"Common Triangle: "<<commonTriangle<<endl;
+        double arcIntegral = triangles[commonTriangle].m*(sin(intersections[j].theta) - sin(intersections[i].theta)) 
+                                - triangles[commonTriangle].n * (cos(intersections[j].theta) - cos(intersections[i].theta))
+                                + triangles[commonTriangle].h * (intersections[j].theta - intersections[i].theta);
+        integral+=arcIntegral;
+        cout<<"\tt1: "<<intersections[i].theta<<", t2:"<<intersections[j].theta<<"\t    arcInt: "<<arcIntegral<<",  integral:"<<integral<<endl;
+
+        debugIntersectionsStream<<intersections[i].theta<<" ";
     }
+    cout<<"\nINTEGRAL VALUE: "<<integral<<endl;
     debugIntersectionsStream<<endl;
     intersections.clear();
 }

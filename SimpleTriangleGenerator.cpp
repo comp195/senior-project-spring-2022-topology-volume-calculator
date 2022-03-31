@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
         cout<<"Usage: <Points File> <Triangles File> <X size> <Y size> <Step size X> <Step size Y>"<<endl;
         return -1;
     }
-    float pointHeight = 0;
+    float pointHeight = 1;
     int x = atoi(argv[3]);
     int y = atoi(argv[4]);
     float stepX = atof(argv[5]);
