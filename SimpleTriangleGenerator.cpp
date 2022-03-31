@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
         cout<<"Usage: <Points File> <Triangles File> <X size> <Y size> <Step size X> <Step size Y> <Noise>"<<endl;
         return -1;
     }
-    float pointHeight = 1;
+    float pointHeight = 0.5;
     int x = atoi(argv[3]);
     int y = atoi(argv[4]);
     float stepX = atof(argv[5]);
@@ -35,7 +35,9 @@ int main(int argc, char *argv[])
     {
         for(float i=0; i< numPointsX; i++)
         {
-            pointsFile<<i*stepX+distribution(generator)<<" "<<j*stepY+distribution(generator)<<" "<<pointHeight<<endl;
+            double x = i*stepX+distribution(generator);
+            double y = j*stepY+distribution(generator);
+            pointsFile<<x<<" "<<y<<" "<<x*y<<endl;
         }
     }
     pointsFile.close();
