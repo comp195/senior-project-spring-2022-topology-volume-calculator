@@ -27,7 +27,7 @@ def main():
     canvas = Canvas(root, width = 2000, height = 1400)
     canvas.pack()
 
-    spacing = 100
+    spacing = 40
     offset = 10
 
 

@@ -652,6 +652,8 @@ vector<Intersection> CircleLineIntersection(LineSegmentKey ls, int circleIndex, 
             double theta = asin(IC[1]/radii[radiiIndex]);
             if(IC[0]<0)
                 theta = pi-theta;
+            if(theta < 0)
+                theta += 2*pi;
 
             intersections.push_back(Intersection(theta, ls));
         }
@@ -678,6 +680,8 @@ vector<Intersection> CircleLineIntersection(LineSegmentKey ls, int circleIndex, 
             //cout<<"NumBeforeAsin: "<<IC[1]/radii[radiiIndex]<<",   Theta: "<<theta<<endl;
             if(IC[0]<0)
                 theta = pi-theta;
+            if(theta < 0)
+                theta += 2*pi;
 
             intersections.push_back(Intersection(theta, ls));
         }
@@ -699,6 +703,8 @@ vector<Intersection> CircleLineIntersection(LineSegmentKey ls, int circleIndex, 
             //cout<<"NumBeforeAsin: "<<IC[1]/radii[radiiIndex]<<",   Theta: "<<theta<<endl;
             if(IC[0]<0)
                 theta = pi-theta;
+            if(theta < 0)
+                theta += 2*pi;
 
             intersections.push_back(Intersection(theta, ls));
         }
@@ -765,8 +771,8 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
         }
         foundTriangle:
         //cout<<"Common Triangle: "<<commonTriangle<<endl;
-        double arcIntegral = triangles[commonTriangle].m*(sin(intersections[j].theta) - sin(intersections[i].theta)) 
-                                - triangles[commonTriangle].n * (cos(intersections[j].theta) - cos(intersections[i].theta))
+        double arcIntegral = - triangles[commonTriangle].m*(sin(intersections[j].theta) - sin(intersections[i].theta)) 
+                                + triangles[commonTriangle].n * (cos(intersections[j].theta) - cos(intersections[i].theta))
                                 + triangles[commonTriangle].h * (intersections[j].theta - intersections[i].theta);
         integral+=arcIntegral;
         cout<<"\tt1: "<<intersections[i].theta<<", t2:"<<intersections[j].theta<<"\t    arcInt: "<<arcIntegral<<",  integral:"<<integral<<endl;
