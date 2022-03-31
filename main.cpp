@@ -55,7 +55,7 @@ struct LineSegmentKey
     {
         size_t operator()(const LineSegmentKey& segment) const
         {
-            return segment.points[0]<<(SYSTEM_NUM_BITS/2)+segment.points[1];
+            return (segment.points[0]<<(SYSTEM_NUM_BITS/2))+segment.points[1];
         }
     };
 };
