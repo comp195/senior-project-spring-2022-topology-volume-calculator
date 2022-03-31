@@ -3,13 +3,14 @@
 #include <list>
 #include <vector>
 #include <unordered_set>
+#include <random>
 using namespace std;
 
 int main(int argc, char *argv[])
 {
-    if(argc != 7)
+    if(argc != 8)
     {
-        cout<<"Usage: <Points File> <Triangles File> <X size> <Y size> <Step size X> <Step size Y>"<<endl;
+        cout<<"Usage: <Points File> <Triangles File> <X size> <Y size> <Step size X> <Step size Y> <Noise>"<<endl;
         return -1;
     }
     float pointHeight = 0;
@@ -26,12 +27,15 @@ int main(int argc, char *argv[])
 
     ofstream pointsFile;
     pointsFile.open(argv[1]);
+    float noisePower = atof(argv[7]);
+    default_random_engine generator;
+    uniform_real_distribution<float> distribution(-noisePower,noisePower);
 
     for(float j=0; j< numPointsY; j++)
     {
         for(float i=0; i< numPointsX; i++)
         {
-            pointsFile<<i*stepX<<" "<<j*stepY<<" "<<pointHeight<<endl;
+            pointsFile<<i*stepX+distribution(generator)<<" "<<j*stepY+distribution(generator)<<" "<<pointHeight<<endl;
         }
     }
     pointsFile.close();
