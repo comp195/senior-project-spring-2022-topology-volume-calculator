@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_set>
 #include <random>
+#include <chrono>
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -29,6 +30,7 @@ int main(int argc, char *argv[])
     pointsFile.open(argv[1]);
     float noisePower = atof(argv[7]);
     default_random_engine generator;
+    generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
     uniform_real_distribution<float> distribution(-noisePower,noisePower);
 
     for(float j=0; j< numPointsY; j++)
