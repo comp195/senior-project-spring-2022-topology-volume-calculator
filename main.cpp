@@ -15,6 +15,11 @@
 
 using namespace std;
 
+//1 = No triangle march
+//2 = Triangle march
+#define VERSION 2
+
+clock_t overall_time;
 clock_t time_req;
 double pi = 3.141592653589793238462643383279502884197169399375105820974944;
 double root2 = sqrt(2);
@@ -54,6 +59,11 @@ struct LineSegmentKey
         return (points[0] == otherSegment.points[0] && points[1] == otherSegment.points[1]);
     }
 
+    bool operator!=(const LineSegmentKey & other) const
+    {
+        return (points[0] != other.points[0] || points[1] != other.points[1]);
+    }
+
     struct HashFunction
     {
         size_t operator()(const LineSegmentKey& segment) const
@@ -71,7 +81,6 @@ struct Triangle;
 struct Square;
 struct Circle;
 struct Intersection;
-
 
 //Data Variables
 Point *points;
@@ -131,10 +140,20 @@ struct Point
 struct Triangle
 {
     int points[3];
+    double center[2];
     //z = -mx - ny + h
     double m;
     double n;
     double h;
+
+    vector<LineSegmentKey> GetSegments()
+    {
+        vector<LineSegmentKey> trigSegments;
+        trigSegments.push_back(LineSegmentKey(points[0],points[1]));
+        trigSegments.push_back(LineSegmentKey(points[0],points[2]));
+        trigSegments.push_back(LineSegmentKey(points[1],points[2]));
+        return trigSegments;
+    }
 };
 struct Square
 {
@@ -160,7 +179,7 @@ struct Intersection
         return theta < other.theta;
     }
 
-    bool operator==(const Intersection& other) const
+    bool operator==(const Intersection & other) const
     {
         return other.theta == this->theta;
     }
@@ -309,6 +328,9 @@ void ReadTriangles(char *triangleFile)
             LineSegmentKey s1 = LineSegmentKey(ind1,ind2);
             LineSegmentKey s2 = LineSegmentKey(ind1,ind3);
             LineSegmentKey s3 = LineSegmentKey(ind2,ind3);
+            
+            triangles[i].center[0] = (a.x+b.x+c.x)/3;
+            triangles[i].center[1] = (a.y+b.y+c.y)/3;
 
             //cout<<"\tTriangle "<<i<<endl<<"\t\t";
             //PrintSegment(s1);
@@ -342,7 +364,7 @@ void ReadTriangles(char *triangleFile)
             double m = normalVector[0]/normalVector[2];
             double n = normalVector[1]/normalVector[2];
             double h = a.x*m + a.y*n + a.h;
-            cout<<"m: "<<m<<"   n: "<<n<<"   h: "<<h<<endl;
+            //cout<<"m: "<<m<<"   n: "<<n<<"   h: "<<h<<endl;
             triangles[i].m = m;
             triangles[i].n = n;
             triangles[i].h = h;
@@ -729,7 +751,7 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
     unordered_set<LineSegmentKey, LineSegmentKey::HashFunction> checkedSegments;
     vector<LineSegmentKey> queue;
     vector<LineSegmentKey> nextQueue;
-
+#if VERSION == 1
     //std::cout<<"SingleCircleIntegral: <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> : "<<radii[radiiIndex]<<endl;
     for(auto [key, value] : segments)
     {
@@ -741,6 +763,80 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
             //cout<<"\t - Hit!"<<endl;
             intersections.insert(intersections.end(), temp.begin(), temp.end());
     }
+#else
+    //std::cout<<"SingleCircleIntegral: <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> : "<<radii[radiiIndex]<<endl;
+    for(auto [key, value] : segments)
+    {
+        //cout<<"\t";
+        //PrintSegment(key);
+        //cout<<endl;
+        vector<Intersection> temp = CircleLineIntersection(key, circleIndex, radiiIndex);
+        if(!temp.empty())
+        {
+            //cout<<"\t - Hit!"<<endl;
+            checkedSegments.insert(key);
+            for(int trig : value.triangles)
+            {
+                Triangle t = triangles[trig];
+                LineSegmentKey ls1 = LineSegmentKey(t.points[0], t.points[1]);
+                LineSegmentKey ls2 = LineSegmentKey(t.points[0], t.points[2]);
+                LineSegmentKey ls3 = LineSegmentKey(t.points[1], t.points[2]);
+                if(checkedSegments.find(ls1) != checkedSegments.end())
+                {
+                    checkedSegments.insert(ls1);
+                    queue.push_back(ls1);
+                }
+                if(checkedSegments.find(ls2) != checkedSegments.end())
+                {
+                    checkedSegments.insert(ls2);
+                    queue.push_back(ls2);
+                }
+                if(checkedSegments.find(ls3) != checkedSegments.end())
+                {
+                    checkedSegments.insert(ls3);
+                    queue.push_back(ls3);
+                }
+            }
+            intersections.insert(intersections.end(), temp.begin(), temp.end());
+            break;
+        }
+    }
+    int size = queue.size();
+    for(int i=0; i<size; i++)
+    {
+        vector<Intersection> temp = CircleLineIntersection(queue[i], circleIndex, radiiIndex);
+        if(!temp.empty())
+        {
+            //cout<<"\t - Hit!"<<endl;
+            for(int trig : segments[queue[i]].triangles)
+            {
+                Triangle t = triangles[trig];
+                LineSegmentKey ls1 = LineSegmentKey(t.points[0], t.points[1]);
+                LineSegmentKey ls2 = LineSegmentKey(t.points[0], t.points[2]);
+                LineSegmentKey ls3 = LineSegmentKey(t.points[1], t.points[2]);
+                if(checkedSegments.find(ls1) == checkedSegments.end())
+                {
+                    checkedSegments.insert(ls1);
+                    queue.push_back(ls1);
+                    size++;
+                }
+                if(checkedSegments.find(ls2) == checkedSegments.end())
+                {
+                    checkedSegments.insert(ls2);
+                    queue.push_back(ls2);
+                    size++;
+                }
+                if(checkedSegments.find(ls3) == checkedSegments.end())
+                {
+                    checkedSegments.insert(ls3);
+                    queue.push_back(ls3);
+                    size++;
+                }
+            }
+            intersections.insert(intersections.end(), temp.begin(), temp.end());
+        }
+    }
+#endif
     sort(intersections.begin(), intersections.end());
     //Intersections should be finished Calculating, print them here:
     if(debug)
@@ -748,6 +844,8 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
         debugIntersectionsStream<<circles[circleIndex].x<<" "<<circles[circleIndex].y<<" "<<radii[radiiIndex]<<" ";
     }
     //cout<<"Intersections for circle at <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> with r: "<<radii[radiiIndex]<<"\n";
+    
+    //Calculate Integral
     double integral = 0;
     int numIntersections = intersections.size();
     for(int i=0; i<numIntersections; i++)
@@ -765,30 +863,60 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
             theta2 = intersections[j].theta;
         }
         //cout<<"i: "<<i<<"   j: "<<j<<"\t\t"<<theta1<<" "<<theta2<<endl;
-
-        LineSegmentData ls1 = segments[intersections[i].ls];
-        LineSegmentData ls2 = segments[intersections[j].ls];
-        //cout<<"before set intersection"<<endl;
-
-        int commonTriangle = -1;
-        for(int a : ls1.triangles)
+        int integralTriangle = -1;
+        //Normal Case
+        if(intersections[i].ls != intersections[j].ls)
         {
-            for(int b : ls2.triangles)
+            LineSegmentData ls1 = segments[intersections[i].ls];
+            LineSegmentData ls2 = segments[intersections[j].ls];
+            //cout<<"before set intersection"<<endl;
+
+            for(int a : ls1.triangles)
             {
-                //cout<<"a: "<<a<<", b: "<<b<<endl;
-                if(a == b)
+                for(int b : ls2.triangles)
                 {
-                    commonTriangle = a;
-                    goto foundTriangle;
+                    //cout<<"a: "<<a<<", b: "<<b<<endl;
+                    if(a == b)
+                    {
+                        integralTriangle = a;
+                        goto foundTriangle;
+                    }
                 }
             }
         }
+        //Case where both intersections are on the same line segment, need extra logic to find which triangle to use
+        else
+        {
+            integralTriangle = segments[intersections[i].ls].triangles[0];
+            //Only one available triangle
+            if(segments[intersections[i].ls].triangles.size() == 1)
+            {
+                goto foundTriangle;
+            }
+
+            //Two available triangles
+            double A[2];
+            double B[2];
+            A[0] = cos(intersections[i].theta);
+            A[1] = sin(intersections[i].theta);
+            B[0] = cos(intersections[j].theta);
+            B[1] = sin(intersections[j].theta);
+
+            //Left > 0, on line = 0, Right < 0
+            double side = (B[0] - A[0]) * (triangles[integralTriangle].center[1] - A[1])
+                            - (B[1] - A[1]) * (triangles[integralTriangle].center[0] - A[0]);
+            if(side > 0)
+                integralTriangle = segments[intersections[i].ls].triangles[1];
+        }
 foundTriangle:
-        //cout<<"Common Triangle: "<<commonTriangle<<endl;
-        double arcIntegral = - radii[radiiIndex]*triangles[commonTriangle].m*(sin(theta2) - sin(theta1)) 
-                                + radii[radiiIndex]*triangles[commonTriangle].n * (cos(theta2) - cos(theta1))
-                                + triangles[commonTriangle].h * (theta2 - theta1);
-        integral+=arcIntegral;
+        if(integralTriangle != -1)
+        {
+            //cout<<"Common Triangle: "<<commonTriangle<<endl;
+            double arcIntegral = - radii[radiiIndex]*triangles[integralTriangle].m*(sin(theta2) - sin(theta1)) 
+                                    + radii[radiiIndex]*triangles[integralTriangle].n * (cos(theta2) - cos(theta1))
+                                    + triangles[integralTriangle].h * (theta2 - theta1);
+            integral+=arcIntegral;
+        }
         //cout<<"\tt1: "<<theta1<<", t2:"<<theta2<<"\t    arcInt: "<<arcIntegral<<",  integral:"<<integral<<endl;
 
         debugIntersectionsStream<<intersections[i].theta<<" ";
@@ -821,7 +949,7 @@ int main(int argc, char *argv[])
         std::cout<<"Usage: <Points.txt> <Trianges.txt> <Circles.txt> <NumThreads>"<<endl;
         return 0;
     }
-
+    overall_time = clock();
     cout<<"Reading In Points\n";
     ReadPoints(argv[1]);
 
@@ -856,13 +984,23 @@ int main(int argc, char *argv[])
 
     cout<<"Starting Circle Calculations"<<endl;
     CalculateAllCircleIntegrals();
+	
+    overall_time = clock() - overall_time;
+    cout<<"Program execution took "<<(float)overall_time/CLOCKS_PER_SEC<<" seconds.\t\tPoints: "<<numPoints<<",  Triangles: "<<numTriangles<<",   Circles:  "<<numCircles*radii.size()<<endl;
 
     return 0;
 }
 
 /*
     ToDo:   Triangle March Optimization
+            Edge case for small triangles: 
+                - Find a way to deal with triangles that are too small to intersect a triangle
+                 
 
+                - DONE: NEEDS TO BE TESTED!!!!!!
+                        -When two intersection on the same line right next to each other, the program will need to check if 
+                        line segment is the same for both intersections, then it will find the triangle whose center is 
+                        on the same side of the segment as the arc
 
     Bugs:   Certain circles not having intersections calculated
 Circle File = 

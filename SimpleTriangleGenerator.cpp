@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_set>
 #include <random>
+#include <chrono>
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -13,7 +14,7 @@ int main(int argc, char *argv[])
         cout<<"Usage: <Points File> <Triangles File> <X size> <Y size> <Step size X> <Step size Y> <Noise>"<<endl;
         return -1;
     }
-    float pointHeight = 0.5;
+    float pointHeight = 1;
     int x = atoi(argv[3]);
     int y = atoi(argv[4]);
     float stepX = atof(argv[5]);
@@ -29,6 +30,7 @@ int main(int argc, char *argv[])
     pointsFile.open(argv[1]);
     float noisePower = atof(argv[7]);
     default_random_engine generator;
+    generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
     uniform_real_distribution<float> distribution(-noisePower,noisePower);
 
     for(float j=0; j< numPointsY; j++)
@@ -37,7 +39,7 @@ int main(int argc, char *argv[])
         {
             double x = i*stepX+distribution(generator);
             double y = j*stepY+distribution(generator);
-            pointsFile<<x<<" "<<y<<" "<<x*y<<endl;
+            pointsFile<<x<<" "<<y<<" "<<pointHeight<<endl;
         }
     }
     pointsFile.close();
