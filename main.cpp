@@ -11,6 +11,8 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <omp.h>
+
 using namespace std;
 
 clock_t time_req;
@@ -88,6 +90,7 @@ double largestY;
 //double squareSize;
 long maxSquareX;
 long maxSquareY;
+int numThreads = 1;
 
 bool debug = true;
 string debugSquaresFile = "DebugSquares.txt";
@@ -788,9 +791,12 @@ void CalculateAllCircleIntegrals()
 {
     if(debug)
         debugIntersectionsStream.open(debugIntersectionsFile);
-    for(int i=0; i<numCircles; i++)
-        for(int radiiIndex = 0; radiiIndex < radii.size(); radiiIndex++)
-            SingleCircleIntegral(i, radiiIndex);
+
+    #pragma omp parallel for num_threads(numThreads)
+        for(int i=0; i<numCircles; i++)
+            for(int radiiIndex = 0; radiiIndex < radii.size(); radiiIndex++)
+                SingleCircleIntegral(i, radiiIndex);
+
     if(debug)
         debugIntersectionsStream.close();
 }
@@ -798,9 +804,9 @@ void CalculateAllCircleIntegrals()
 // Driver Code
 int main(int argc, char *argv[])
 {
-    if(argc != 4)
+    if(argc != 5)
     {
-        std::cout<<"Usage: <Points.txt> <Trianges.txt> <Circles.txt>"<<endl;
+        std::cout<<"Usage: <Points.txt> <Trianges.txt> <Circles.txt> <NumThreads>"<<endl;
         return 0;
     }
 
@@ -834,6 +840,7 @@ int main(int argc, char *argv[])
 
     //DivideSquares();
     //PrintSquares();
+    numThreads = atoi(argv[4]);
 
     cout<<"Starting Circle Calculations"<<endl;
     CalculateAllCircleIntegrals();
