@@ -27,8 +27,8 @@ def main():
     canvas = Canvas(root, width = 2000, height = 1400)
     canvas.pack()
 
-    spacing = 100
-    offset = 10
+    spacing = 20
+    offset = 100
 
 
     pointsList = []

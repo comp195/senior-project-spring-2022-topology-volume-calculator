@@ -17,6 +17,7 @@ using namespace std;
 //2 = Triangle march
 #define VERSION 2
 
+clock_t overall_time;
 clock_t time_req;
 double pi = 3.141592653589793238462643383279502884197169399375105820974944;
 double root2 = sqrt(2);
@@ -942,7 +943,7 @@ int main(int argc, char *argv[])
         std::cout<<"Usage: <Points.txt> <Trianges.txt> <Circles.txt>"<<endl;
         return 0;
     }
-
+    overall_time = clock();
     cout<<"Reading In Points\n";
     ReadPoints(argv[1]);
 
@@ -976,6 +977,9 @@ int main(int argc, char *argv[])
 
     cout<<"Starting Circle Calculations"<<endl;
     CalculateAllCircleIntegrals();
+	
+    overall_time = clock() - overall_time;
+    cout<<"Program execution took "<<(float)overall_time/CLOCKS_PER_SEC<<" seconds.\t\tPoints: "<<numPoints<<",  Triangles: "<<numTriangles<<",   Circles:  "<<numCircles*radii.size()<endl;
 
     return 0;
 }
