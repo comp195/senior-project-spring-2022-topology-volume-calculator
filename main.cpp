@@ -979,7 +979,7 @@ int main(int argc, char *argv[])
     CalculateAllCircleIntegrals();
 	
     overall_time = clock() - overall_time;
-    cout<<"Program execution took "<<(float)overall_time/CLOCKS_PER_SEC<<" seconds.\t\tPoints: "<<numPoints<<",  Triangles: "<<numTriangles<<",   Circles:  "<<numCircles*radii.size()<endl;
+    cout<<"Program execution took "<<(float)overall_time/CLOCKS_PER_SEC<<" seconds.\t\tPoints: "<<numPoints<<",  Triangles: "<<numTriangles<<",   Circles:  "<<numCircles*radii.size()<<endl;
 
     return 0;
 }
