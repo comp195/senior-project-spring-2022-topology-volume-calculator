@@ -17,6 +17,7 @@ using namespace std;
 
 clock_t time_req;
 double pi = 3.141592653589793238462643383279502884197169399375105820974944;
+double root2 = sqrt(2);
 int SYSTEM_NUM_BITS = 32;
 
 struct Point;
@@ -341,6 +342,7 @@ void ReadTriangles(char *triangleFile)
             double m = normalVector[0]/normalVector[2];
             double n = normalVector[1]/normalVector[2];
             double h = a.x*m + a.y*n + a.h;
+            cout<<"m: "<<m<<"   n: "<<n<<"   h: "<<h<<endl;
             triangles[i].m = m;
             triangles[i].n = n;
             triangles[i].h = h;
@@ -751,9 +753,18 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
     for(int i=0; i<numIntersections; i++)
     {
         int j = i+1;
-        //cout<<"\t- "<<i.theta<<endl;
-        if(i == numIntersections - 1)
+        double theta1 = intersections[i].theta;
+        double theta2;
+        if(i == numIntersections-1)
+        {
             j = 0;
+            theta2 = intersections[j].theta + 2*pi;
+        }
+        else
+        {
+            theta2 = intersections[j].theta;
+        }
+        //cout<<"i: "<<i<<"   j: "<<j<<"\t\t"<<theta1<<" "<<theta2<<endl;
 
         LineSegmentData ls1 = segments[intersections[i].ls];
         LineSegmentData ls2 = segments[intersections[j].ls];
@@ -772,17 +783,18 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
                 }
             }
         }
-        foundTriangle:
+foundTriangle:
         //cout<<"Common Triangle: "<<commonTriangle<<endl;
-        double arcIntegral = - triangles[commonTriangle].m*(sin(intersections[j].theta) - sin(intersections[i].theta)) 
-                                + triangles[commonTriangle].n * (cos(intersections[j].theta) - cos(intersections[i].theta))
-                                + triangles[commonTriangle].h * (intersections[j].theta - intersections[i].theta);
+        double arcIntegral = - radii[radiiIndex]*triangles[commonTriangle].m*(sin(theta2) - sin(theta1)) 
+                                + radii[radiiIndex]*triangles[commonTriangle].n * (cos(theta2) - cos(theta1))
+                                + triangles[commonTriangle].h * (theta2 - theta1);
         integral+=arcIntegral;
-        cout<<"\tt1: "<<intersections[i].theta<<", t2:"<<intersections[j].theta<<"\t    arcInt: "<<arcIntegral<<",  integral:"<<integral<<endl;
+        //cout<<"\tt1: "<<theta1<<", t2:"<<theta2<<"\t    arcInt: "<<arcIntegral<<",  integral:"<<integral<<endl;
 
         debugIntersectionsStream<<intersections[i].theta<<" ";
     }
-    cout<<"\nINTEGRAL VALUE: "<<integral<<endl;
+    integral *= radii[radiiIndex];
+    cout<<"RADII: "<<radii[radiiIndex]<<"\t\tINTEGRAL VALUE: "<<integral<<endl;
     debugIntersectionsStream<<endl;
     intersections.clear();
 }
