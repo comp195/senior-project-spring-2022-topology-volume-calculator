@@ -24,11 +24,11 @@ def main():
     root = Tk()
     root.title("Data Visualization")
     root.geometry("1000x700")
-    canvas = Canvas(root, width = 2000, height = 1400)
+    canvas = Canvas(root, width = 3000, height = 2100)
     canvas.pack()
 
-    spacing = 20
-    offset = 100
+    spacing = 50
+    offset = 50
 
 
     pointsList = []

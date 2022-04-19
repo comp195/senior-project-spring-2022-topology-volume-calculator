@@ -15,14 +15,14 @@ int main(int argc, char *argv[])
         return -1;
     }
     float pointHeight = 1;
-    int x = atoi(argv[3]);
-    int y = atoi(argv[4]);
+    long long int x = atoi(argv[3]);
+    long long int y = atoi(argv[4]);
     float stepX = atof(argv[5]);
     float stepY = atof(argv[6]);
-    int numPointsX = x/stepX;
+    long long int numPointsX = x/stepX;
     if(numPointsX*stepX < x)
         numPointsX += 1;
-    int numPointsY = y/stepY;
+    long long int numPointsY = y/stepY;
     if(numPointsY*stepY < y)
         numPointsY += 1;
 
@@ -33,12 +33,12 @@ int main(int argc, char *argv[])
     generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
     uniform_real_distribution<float> distribution(-noisePower,noisePower);
 
-    for(float j=0; j< numPointsY; j++)
+    for(long double j=0; j< numPointsY; j++)
     {
-        for(float i=0; i< numPointsX; i++)
+        for(long double i=0; i< numPointsX; i++)
         {
-            double x = i*stepX+distribution(generator);
-            double y = j*stepY+distribution(generator);
+            long double x = i*stepX+distribution(generator);
+            long double y = j*stepY+distribution(generator);
             pointsFile<<x<<" "<<y<<" "<<pointHeight<<endl;
         }
     }
@@ -51,11 +51,11 @@ int main(int argc, char *argv[])
 
     cout<<"x: "<<x<<",  stepX: "<<stepX<<",  numX: "<<numPointsX<<"  -  ";
     cout<<"y: "<<y<<",  stepy: "<<stepY<<",  numY: "<<(y/stepY)<<" ";
-    for(int j=0; j< numPointsY-1; j++)
+    for(long long j=0; j< numPointsY-1; j++)
     {
-        for(int i=0; i< numPointsX-1; i++)
+        for(long long i=0; i< numPointsX-1; i++)
         {
-            int a = j*numPointsX+i;
+            long long a = j*numPointsX+i;
             //trianglesFile<<a<<" "<<a+1<<" "<<a+numPointsX<<endl;
             //trianglesFile<<a+1<<" "<<a+1+numPointsX<<" "<<a+numPointsX<<endl;
 

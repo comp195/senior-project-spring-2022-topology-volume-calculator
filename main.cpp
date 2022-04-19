@@ -30,7 +30,7 @@ struct LineSegmentKey
 {
     long points[2];
 
-    LineSegmentKey(int a, int b)
+    LineSegmentKey(long a, long b)
     {
         if(a < b)
         {
@@ -74,7 +74,7 @@ struct LineSegmentKey
 };
 struct LineSegmentData
 {
-    vector<int> triangles;
+    vector<long> triangles;
 };
 
 struct Triangle;
@@ -87,7 +87,7 @@ Point *points;
 unordered_map<LineSegmentKey, LineSegmentData, LineSegmentKey::HashFunction> segments;
 Triangle *triangles;
 Circle *circles;
-vector<double> radii;
+vector<long double> radii;
 long numPoints;
 long numSegments;
 long numTriangles;
@@ -95,11 +95,11 @@ long numCircles;
 
 //Square Algorithm Variables
 Square **squares;
-double largestX;
-double largestY;
+//double largestX;
+//double largestY;
 //double squareSize;
-long maxSquareX;
-long maxSquareY;
+//long maxSquareX;
+//long maxSquareY;
 int numThreads = 1;
 
 bool debug = true;
@@ -109,9 +109,9 @@ string debugIntersectionsFile = "DebugIntersections.txt";
 
 struct Point
 {
-    double x;
-    double y;
-    double h;
+    long double x;
+    long double y;
+    long double h;
 
     bool operator==(const Point& otherPoint) const
     {
@@ -139,8 +139,8 @@ struct Point
 
 struct Triangle
 {
-    int points[3];
-    double center[2];
+    long int points[3];
+    long double center[2];
     //z = -mx - ny + h
     double m;
     double n;
@@ -162,9 +162,9 @@ struct Square
 struct Circle
 {
     //x, y, h = radius
-    double x;
-    double y;
-    double lineIntegral;
+    long double x;
+    long double y;
+    long double lineIntegral;
 };
 struct Intersection
 {
@@ -202,7 +202,7 @@ void PrintSegmentSimple(LineSegmentKey s)
     //cout<<"Hash: "<<LineSegmentKey::HashFunction().operator(s);
     cout<<"("<<s.points[0]<<" - "<<s.points[1]<<")";
 }
-void PrintSquares()
+/*void PrintSquares()
 {
     ofstream debugFile;
     if(debug)
@@ -231,11 +231,11 @@ void PrintSquares()
             }
         }
     }
-}
+}*/
 void PrintTriangles()
 {
     cout<<"\nPrinting "<<numTriangles<<" Trianges:"<<endl;
-    for(int i=0; i<numTriangles; i++)
+    for(long i=0; i<numTriangles; i++)
     {
         cout<<"\tTriangle "<<&triangles[i]<<endl<<"\t\t";
         PrintSegment(LineSegmentKey(triangles[i].points[0], triangles[i].points[1]));
@@ -247,11 +247,11 @@ void PrintTriangles()
     }
 }
 
-int FileNumLines(string fileName)
+long FileNumLines(string fileName)
 {
     time_req = clock();
     string line;
-    int count = 0;
+    long count = 0;
     ifstream readFile(fileName);
     if(readFile.is_open())
     {
@@ -270,8 +270,6 @@ int FileNumLines(string fileName)
 }
 void ReadPoints(char *pointsFile)
 {
-    largestX = 0;
-    largestY = 0;
     ifstream readFile(pointsFile);
     if(readFile)
     {
@@ -280,17 +278,13 @@ void ReadPoints(char *pointsFile)
         points = new Point[numPoints];
         double input;
 
-        for(int i = 0; i < numPoints; i++)
+        for(long i = 0; i < numPoints; i++)
         {
             readFile >> input;
             points[i].x = input;
-            if(input > largestX)
-                largestX = input;
 
             readFile >> input;
             points[i].y = input;
-            if(input > largestY)
-                largestY = input;
 
             readFile >> input;
             points[i].h = input;
@@ -312,15 +306,16 @@ void ReadTriangles(char *triangleFile)
     if(readFile)
     {
         numTriangles = FileNumLines(triangleFile);
+        cout<<"NumTriangles: "<<numTriangles<<endl;
         triangles = new Triangle[numTriangles];
         double input;
         numSegments = 0;
         //squareSize = 0;
 
         time_req = clock();
-        for(int i = 0; i < numTriangles; i++)
+        for(long long i = 0; i < numTriangles; i++)
         {
-            int ind1, ind2, ind3;
+            long ind1, ind2, ind3;
             readFile >> ind1 >> ind2 >> ind3;
             Point a = points[ind1];
             Point b = points[ind2];
@@ -466,20 +461,20 @@ void ReadCircles(char *circleFile)
     {
         numCircles = FileNumLines(circleFile) - 1;
         circles = new Circle[numCircles];
-        double radiStart;
-        double radiEnd;
+        long double radiStart;
+        long double radiEnd;
         double radiStep;
         readFile >> radiStart >> radiEnd >> radiStep;
 
-        for(double i = radiStart; i<=radiEnd; i += radiStep)
+        for(long double i = radiStart; i<=radiEnd; i += radiStep)
         {
-            cout<<"Reading Circle Radii: "<<i<<endl;
+            //cout<<"Reading Circle Radii: "<<i<<endl;
             radii.push_back(i);
         }
 
         double input;
 
-        for(int i = 0; i < numCircles; i++)
+        for(long i = 0; i < numCircles; i++)
         {
             readFile >> input;
             circles[i].x = input;
@@ -640,7 +635,7 @@ void DivideSquares()
     cout<<"Divide Squares Finishing"<<endl;
 }*/
 
-vector<Intersection> CircleLineIntersection(LineSegmentKey ls, int circleIndex, int radiiIndex)
+vector<Intersection> CircleLineIntersection(LineSegmentKey ls, long int circleIndex, long int radiiIndex)
 {
     //PrintSegment(ls);
     vector<Intersection> intersections;
@@ -741,7 +736,7 @@ vector<Intersection> CircleLineIntersection(LineSegmentKey ls, int circleIndex, 
 }
 
 ofstream debugIntersectionsStream;
-void SingleCircleIntegral(int circleIndex, int radiiIndex)
+void SingleCircleIntegral(long int circleIndex, long int radiiIndex)
 {
         /*
          * Optimizations:
@@ -775,7 +770,7 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
         {
             //cout<<"\t - Hit!"<<endl;
             checkedSegments.insert(key);
-            for(int trig : value.triangles)
+            for(long int trig : value.triangles)
             {
                 Triangle t = triangles[trig];
                 LineSegmentKey ls1 = LineSegmentKey(t.points[0], t.points[1]);
@@ -801,14 +796,14 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
             break;
         }
     }
-    int size = queue.size();
-    for(int i=0; i<size; i++)
+    long int size = queue.size();
+    for(long int i=0; i<size; i++)
     {
         vector<Intersection> temp = CircleLineIntersection(queue[i], circleIndex, radiiIndex);
         if(!temp.empty())
         {
             //cout<<"\t - Hit!"<<endl;
-            for(int trig : segments[queue[i]].triangles)
+            for(long int trig : segments[queue[i]].triangles)
             {
                 Triangle t = triangles[trig];
                 LineSegmentKey ls1 = LineSegmentKey(t.points[0], t.points[1]);
@@ -846,11 +841,11 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
     //cout<<"Intersections for circle at <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> with r: "<<radii[radiiIndex]<<"\n";
     
     //Calculate Integral
-    double integral = 0;
-    int numIntersections = intersections.size();
-    for(int i=0; i<numIntersections; i++)
+    long double integral = 0;
+    long int numIntersections = intersections.size();
+    for(long int i=0; i<numIntersections; i++)
     {
-        int j = i+1;
+        long int j = i+1;
         double theta1 = intersections[i].theta;
         double theta2;
         if(i == numIntersections-1)
@@ -863,7 +858,7 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
             theta2 = intersections[j].theta;
         }
         //cout<<"i: "<<i<<"   j: "<<j<<"\t\t"<<theta1<<" "<<theta2<<endl;
-        int integralTriangle = -1;
+        long int integralTriangle = -1;
         //Normal Case
         if(intersections[i].ls != intersections[j].ls)
         {
@@ -871,9 +866,9 @@ void SingleCircleIntegral(int circleIndex, int radiiIndex)
             LineSegmentData ls2 = segments[intersections[j].ls];
             //cout<<"before set intersection"<<endl;
 
-            for(int a : ls1.triangles)
+            for(long int a : ls1.triangles)
             {
-                for(int b : ls2.triangles)
+                for(long int b : ls2.triangles)
                 {
                     //cout<<"a: "<<a<<", b: "<<b<<endl;
                     if(a == b)
@@ -922,7 +917,7 @@ foundTriangle:
         debugIntersectionsStream<<intersections[i].theta<<" ";
     }
     integral *= radii[radiiIndex];
-    cout<<"RADII: "<<radii[radiiIndex]<<"\t\tINTEGRAL VALUE: "<<integral<<endl;
+    //cout<<"RADII: "<<radii[radiiIndex]<<"\t\tINTEGRAL VALUE: "<<integral<<endl;
     debugIntersectionsStream<<endl;
     intersections.clear();
 }
@@ -933,8 +928,8 @@ void CalculateAllCircleIntegrals()
         debugIntersectionsStream.open(debugIntersectionsFile);
 
     #pragma omp parallel for num_threads(numThreads)
-        for(int i=0; i<numCircles; i++)
-            for(int radiiIndex = 0; radiiIndex < radii.size(); radiiIndex++)
+        for(long int i=0; i<numCircles; i++)
+            for(long int radiiIndex = 0; radiiIndex < radii.size(); radiiIndex++)
                 SingleCircleIntegral(i, radiiIndex);
 
     if(debug)
