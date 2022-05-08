@@ -59,8 +59,16 @@ int main(int argc, char *argv[])
             //trianglesFile<<a<<" "<<a+1<<" "<<a+numPointsX<<endl;
             //trianglesFile<<a+1<<" "<<a+1+numPointsX<<" "<<a+numPointsX<<endl;
 
-            trianglesFile<<a<<" "<<a+1+numPointsX<<" "<<a+numPointsX<<endl;
-            trianglesFile<<a<<" "<<a+1<<" "<<a+numPointsX+1<<endl;
+            if((rand() % 2) != 0)
+            {
+                trianglesFile<<a<<" "<<a+1+numPointsX<<" "<<a+numPointsX<<endl;
+                trianglesFile<<a<<" "<<a+1<<" "<<a+numPointsX+1<<endl;
+            }
+            else
+            {
+                trianglesFile<<a<<" "<<a+numPointsX<<" "<<a+1<<endl;
+                trianglesFile<<a+1<<" "<<a+numPointsX<<" "<<a+numPointsX+1<<endl;
+            }
         }
     }
     trianglesFile.close();

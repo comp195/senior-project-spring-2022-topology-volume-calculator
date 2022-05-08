@@ -604,6 +604,7 @@ void SingleCircleIntegral(long int circleIndex, long int radiiIndex)
     //Intersections should be finished Calculating, print them here:
     if(debug)
     {
+    #pragma omp critical
         debugIntersectionsStream<<circles[circleIndex].x<<" "<<circles[circleIndex].y<<" "<<radii[radiiIndex]<<" ";
     }
     //cout<<"Intersections for circle at <"<<circles[circleIndex].x<<", "<<circles[circleIndex].y<<"> with r: "<<radii[radiiIndex]<<"\n";
@@ -682,7 +683,8 @@ foundTriangle:
         }
         //cout<<"\tt1: "<<theta1<<", t2:"<<theta2<<"\t    arcInt: "<<arcIntegral<<",  integral:"<<integral<<endl;
 
-        debugIntersectionsStream<<intersections[i].theta<<" ";
+        #pragma omp critical
+            debugIntersectionsStream<<intersections[i].theta<<" ";
     }
     integral *= radii[radiiIndex];
     #pragma omp critical
