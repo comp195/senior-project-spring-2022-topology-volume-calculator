@@ -1,7 +1,7 @@
 # TopologicCircles
 Ryan Porter: r_porter4@u.pacific.edu
 
-A calculator for finding the average height of a triangulated mesh, along the circumference of a input circle.
+A calculator for finding the total height of a triangulated mesh, along the circumference of input circles.
 
 Components:
 - main.cpp - This is the calculator program
@@ -12,7 +12,4 @@ Input Files:
 - Points.txt
 - Triangles.txt
 - Circles.txt
-
-Debug Files:
-- DebugSquares.txt - Output to visualize main.cpp's DivideSquares function
 
